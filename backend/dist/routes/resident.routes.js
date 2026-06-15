@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const resident_controller_1 = require("../controllers/resident.controller");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const validation_middleware_1 = require("../middlewares/validation.middleware");
+const resident_validator_1 = require("../validators/resident.validator");
+const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authMiddleware);
+router.post('/', (0, auth_middleware_1.requireRole)(['SuperAdmin', 'SocietyAdmin']), (0, validation_middleware_1.validate)({ body: resident_validator_1.createResidentSchema }), resident_controller_1.createResident);
+router.get('/', resident_controller_1.getResidents);
+router.get('/:id', resident_controller_1.getResidentById);
+router.patch('/:id', (0, validation_middleware_1.validate)({ body: resident_validator_1.updateResidentSchema }), resident_controller_1.updateResident);
+router.delete('/:id', (0, auth_middleware_1.requireRole)(['SuperAdmin', 'SocietyAdmin']), resident_controller_1.deleteResident);
+exports.default = router;

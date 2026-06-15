@@ -1,0 +1,22 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_routes_1 = __importDefault(require("./auth.routes"));
+const complaint_routes_1 = __importDefault(require("./complaint.routes"));
+const resident_routes_1 = __importDefault(require("./resident.routes"));
+const payment_routes_1 = __importDefault(require("./payment.routes"));
+const bill_routes_1 = __importDefault(require("./bill.routes"));
+const notice_routes_1 = __importDefault(require("./notice.routes"));
+const vendor_routes_1 = __importDefault(require("./vendor.routes"));
+const apiRouter = (0, express_1.Router)();
+apiRouter.use('/auth', auth_routes_1.default);
+apiRouter.use('/complaints', complaint_routes_1.default);
+apiRouter.use('/residents', resident_routes_1.default);
+apiRouter.use('/payments', payment_routes_1.default);
+apiRouter.use('/bills', bill_routes_1.default);
+apiRouter.use('/notices', notice_routes_1.default);
+apiRouter.use('/vendors', vendor_routes_1.default);
+exports.default = apiRouter;

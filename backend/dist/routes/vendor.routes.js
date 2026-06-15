@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const vendor_controller_1 = require("../controllers/vendor.controller");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const validation_middleware_1 = require("../middlewares/validation.middleware");
+const vendor_validator_1 = require("../validators/vendor.validator");
+const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authMiddleware);
+router.post('/', (0, auth_middleware_1.requireRole)(['SuperAdmin', 'SocietyAdmin']), (0, validation_middleware_1.validate)({ body: vendor_validator_1.createVendorSchema }), vendor_controller_1.createVendor);
+router.get('/', vendor_controller_1.getVendors);
+router.get('/:id', vendor_controller_1.getVendorById);
+router.patch('/:id', (0, auth_middleware_1.requireRole)(['SuperAdmin', 'SocietyAdmin']), (0, validation_middleware_1.validate)({ body: vendor_validator_1.updateVendorSchema }), vendor_controller_1.updateVendor);
+router.delete('/:id', (0, auth_middleware_1.requireRole)(['SuperAdmin', 'SocietyAdmin']), vendor_controller_1.deleteVendor);
+router.post('/:id/ratings', (0, validation_middleware_1.validate)({ body: vendor_validator_1.addRatingSchema }), vendor_controller_1.addVendorRating);
+exports.default = router;

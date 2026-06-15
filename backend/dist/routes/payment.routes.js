@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const payment_controller_1 = require("../controllers/payment.controller");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const validation_middleware_1 = require("../middlewares/validation.middleware");
+const payment_validator_1 = require("../validators/payment.validator");
+const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authMiddleware);
+router.post('/', (0, auth_middleware_1.requireRole)(['SuperAdmin', 'SocietyAdmin', 'ResidentOwner', 'ResidentTenant']), (0, validation_middleware_1.validate)({ body: payment_validator_1.createPaymentSchema }), payment_controller_1.createPayment);
+router.get('/', payment_controller_1.getPayments);
+router.get('/:id', payment_controller_1.getPaymentById);
+router.patch('/:id/status', (0, auth_middleware_1.requireRole)(['SuperAdmin', 'SocietyAdmin']), (0, validation_middleware_1.validate)({ body: payment_validator_1.updatePaymentStatusSchema }), payment_controller_1.updatePaymentStatus);
+exports.default = router;

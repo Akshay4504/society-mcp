@@ -1,0 +1,42 @@
+groups:
+  - name: system-alerts
+    rules:
+      # Alert if an instance is unreachable
+      - alert: InstanceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instance {{ $labels.instance }} down"
+          description: "Service {{ $labels.job }} ({{ $labels.instance }}) has been down for more than 1 minute."
+
+      # Alert if MongoDB database connection fails
+      - alert: DatabaseConnectionDown
+        expr: mongodb_connection_status == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection down on {{ $labels.instance }}"
+          description: "Mongoose database connection status is reported as down (disconnected) on {{ $labels.instance }} for 30 seconds."
+
+      # Alert if error rates exceed 5%
+      - alert: HighHTTP5xxErrorRate
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) by (instance, job) / sum(rate(http_requests_total[5m])) by (instance, job) * 100 > 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High HTTP 5xx error rate on {{ $labels.instance }}"
+          description: "HTTP 5xx server errors account for {{ $value | printf \"%.2f\" }}% of requests over the past 5 minutes."
+
+      # Alert if response latency p95 > 2s
+      - alert: SlowRequests
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, instance, job)) > 2
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow response latency on {{ $labels.instance }}"
+          description: "The 95th percentile request latency is {{ $value | printf \"%.2f\" }} seconds over the past 5 minutes."

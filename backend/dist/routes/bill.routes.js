@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const bill_controller_1 = require("../controllers/bill.controller");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const validation_middleware_1 = require("../middlewares/validation.middleware");
+const bill_validator_1 = require("../validators/bill.validator");
+const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authMiddleware);
+router.post('/', (0, auth_middleware_1.requireRole)(['SuperAdmin', 'SocietyAdmin']), (0, validation_middleware_1.validate)({ body: bill_validator_1.createBillSchema }), bill_controller_1.createBill);
+router.get('/', bill_controller_1.getBills);
+router.get('/:id', bill_controller_1.getBillById);
+exports.default = router;

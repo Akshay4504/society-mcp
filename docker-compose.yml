@@ -1,0 +1,117 @@
+services:
+  # 1. MongoDB Database Service
+  mongodb:
+    image: mongo:6.0
+    container_name: smm-mongodb
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - smm-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--username", "${MONGO_ROOT_USERNAME}", "--password", "${MONGO_ROOT_PASSWORD}", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # 2. REST API Backend Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smm-backend
+    restart: unless-stopped
+    environment:
+      - PORT=${PORT}
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017/${MONGO_DB_NAME}?authSource=admin
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - smm-network
+
+  # 3. MCP SSE Server Service
+  mcp-server:
+    build:
+      context: ./mcp-server
+      dockerfile: Dockerfile
+    container_name: smm-mcp-server
+    restart: unless-stopped
+    environment:
+      - PORT=${MCP_PORT}
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017/${MONGO_DB_NAME}?authSource=admin
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - smm-network
+
+  # 4. React Vite Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: smm-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - smm-network
+
+  # 5. Global Nginx Reverse Proxy Service
+  nginx:
+    image: nginx:stable-alpine
+    container_name: smm-nginx-router
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-80}:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+      - mcp-server
+    networks:
+      - smm-network
+
+  # 6. Prometheus Service
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: smm-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml:ro
+    networks:
+      - smm-network
+
+  # 7. Grafana Dashboard Service
+  grafana:
+    image: grafana/grafana:latest
+    container_name: smm-grafana
+    restart: unless-stopped
+    ports:
+      - "3100:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observability/grafana/provisioning/datasources/prometheus.yaml:/etc/grafana/provisioning/datasources/prometheus.yaml:ro
+      - ./observability/grafana/provisioning/dashboards/dashboard.yaml:/etc/grafana/provisioning/dashboards/dashboard.yaml:ro
+      - ./observability/grafana/dashboards/node-express.json:/var/lib/grafana/dashboards/node-express.json:ro
+    networks:
+      - smm-network
+
+volumes:
+  mongodb_data:
+  grafana_data:
+
+networks:
+  smm-network:
+    driver: bridge
