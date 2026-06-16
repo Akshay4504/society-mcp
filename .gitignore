@@ -1,0 +1,9 @@
+.env 
+.env 
+.env
+.env.*
+backend/.env
+frontend/.env
+mcp-server/.env
+node_modules/
+dist/
