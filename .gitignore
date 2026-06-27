@@ -7,3 +7,5 @@ frontend/.env
 mcp-server/.env
 node_modules/
 dist/
+.vercel
+.env*
